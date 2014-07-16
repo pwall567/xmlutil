@@ -526,14 +526,12 @@ public class XML {
      * @return              the root element
      * @throws  XMLException if the root element name is incorrect
      */
-    public static Element getDocumentElement(Document document, String name,
-            String nsuri) {
+    public static Element getDocumentElement(Document document, String name, String nsuri) {
         Element root = document.getDocumentElement();
         if (root == null)
             throw new XMLException("Missing document element");
         if (!matchNS(root, name, nsuri))
-            throw new XMLException("Incorrect document element: <" +
-                    root.getTagName() + '>');
+            throw new XMLException("Incorrect document element: <" + root.getTagName() + '>');
         return root;
     }
 
@@ -550,8 +548,7 @@ public class XML {
         if (root == null)
             throw new XMLException("Missing document element");
         if (!match(root, name))
-            throw new XMLException("Incorrect document element: <" +
-                    root.getTagName() + '>');
+            throw new XMLException("Incorrect document element: <" + root.getTagName() + '>');
         return root;
     }
 
@@ -575,13 +572,12 @@ public class XML {
     }
 
     /**
-     * Check that a node has no significant content.  This method checks that
-     * each child node of the given node is either a comment node or a
-     * whitespace-only text node.
+     * Check that a node has no significant content.  This method checks that each child node of
+     * the given node is either a comment node or a whitespace-only text node.
      *
-     * @param node the node
-     * @throws XMLException if the node has child nodes that are not comment
-     *                      nodes or empty text nodes
+     * @param   node    the node
+     * @throws  XMLException if the node has child nodes that are not comment
+     *                       nodes or empty text nodes
      */
     public static void checkChildNodes(Node node) {
         NodeList children = node.getChildNodes();
@@ -590,14 +586,13 @@ public class XML {
     }
 
     /**
-     * Check that a node is a comment node or a whitespace-only text node.
-     * When iterating through a list of nodes to find the element nodes, it is
-     * useful to be able to confirm that the non-element nodes are valid.  This
-     * method checks that those nodes are just comment nodes or text nodes
-     * composed entirely of whitespace.
+     * Check that a node is a comment node or a whitespace-only text node.  When iterating
+     * through a list of nodes to find the element nodes, it is useful to be able to confirm
+     * that the non-element nodes are valid.  This method checks that those nodes are just
+     * comment nodes or text nodes composed entirely of whitespace.
      *
-     * @param node the node
-     * @throws XMLException if the node is not a comment or an empty text node
+     * @param   node    the node
+     * @throws  XMLException if the node is not a comment or an empty text node
      */
     public static void checkNode(Node node) {
         if (node instanceof Comment)
@@ -608,8 +603,7 @@ public class XML {
             String message = "Incorrect node type";
             Node parent = node.getParentNode();
             if (parent != null && parent instanceof Element)
-                message = message + " in <" + ((Element)parent).getTagName() +
-                        '>';
+                message = message + " in <" + ((Element)parent).getTagName() + '>';
             throw new XMLException(message);
         }
     }
@@ -617,8 +611,8 @@ public class XML {
     /**
      * Check that a Text node contains only whitespace.
      *
-     * @param text the Text node
-     * @throws XMLException if the node is not empty
+     * @param   text    the Text node
+     * @throws  XMLException if the node is not empty
      */
     public static void checkText(Text text) {
         String data = text.getData();
@@ -628,8 +622,7 @@ public class XML {
                 String message = "No text allowed";
                 Node parent = text.getParentNode();
                 if (parent != null && parent instanceof Element)
-                    message = message + " in <" +
-                            ((Element)parent).getTagName() + '>';
+                    message = message + " in <" + ((Element)parent).getTagName() + '>';
                 throw new XMLException(message);
             }
         }
