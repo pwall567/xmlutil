@@ -385,6 +385,18 @@ public class XML {
         return Strings.escape(cs, dataCharMapper);
     }
 
+    public static void appendEscaped(Appendable a, CharSequence cs) throws IOException {
+        Strings.appendEscaped(a, cs, defaultCharMapper);
+    }
+
+    public static void appendEscapedAll(Appendable a, CharSequence cs) throws IOException {
+        Strings.appendEscaped(a, cs, allCharMapper);
+    }
+
+    public static void appendEscapedData(Appendable a, CharSequence cs) throws IOException {
+        Strings.appendEscaped(a, cs, dataCharMapper);
+    }
+
     /**
      * Unescape a string escaped with XML character or entity references.
      *
