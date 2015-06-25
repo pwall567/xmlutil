@@ -84,6 +84,9 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
     private Locator locator;
     private boolean documentStarted;
     private boolean documentEnded;
+    private boolean dtdStarted;
+    private boolean dtdInternalSubset;
+    private boolean dtdEnded;
 
     /**
      * Construct an {@code XMLFormatter} using the given {@link OutputStream}, with the given
@@ -136,10 +139,77 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
     }
 
     /**
+     * Receive notification of the beginning of the DTD.
+     *
+     * @param   name        the document element name
+     * @param   publicId    the public id
+     * @param   systemId    the system id
+     * @throws  SAXException    on any errors
+     * @see     org.xml.sax.ext.LexicalHandler#startDTD(String, String, String)
+     */
+    @Override
+    public void startDTD(String name, String publicId, String systemId) throws SAXException {
+        if (!documentStarted)
+            throw new SAXException("Document not started");
+        if (dtdStarted || dtdEnded)
+            throw new SAXException("Misplaced DTD");
+        dtdStarted = true;
+        String data = checkData();
+        if (!XML.isAllWhiteSpace(data))
+            throw new SAXException("Misplaced data before DOCTYPE");
+        try {
+            if (whitespace == Whitespace.ALL)
+                write(data);
+            write("<!DOCTYPE ");
+            write(name);
+            if (!isEmpty(publicId)) {
+                write(" PUBLIC \"");
+                write(publicId);
+                write("\" \"");
+                write(systemId);
+                write('"');
+            }
+            else if (!isEmpty(systemId)) {
+                write(" SYSTEM \"");
+                write(systemId);
+                write('"');
+            }
+        }
+        catch (IOException ioe) {
+            throw new SAXException("Error in XMLFormatter", ioe);
+        }
+    }
+
+    /**
+     * Receive notification of the end of the DTD.
+     *
+     * @throws  SAXException    on any errors
+     * @see     org.xml.sax.ext.LexicalHandler#endDTD()
+     */
+    @Override
+    public void endDTD() throws SAXException {
+        if (!documentStarted)
+            throw new SAXException("Document not started");
+        if (!dtdStarted || dtdEnded)
+            throw new SAXException("Misplaced End DTD");
+        dtdEnded = true;
+        try {
+            if (dtdInternalSubset)
+                write(']');
+            write('>');
+            if (whitespace == Whitespace.INDENT)
+                write(eol);
+        }
+        catch (IOException ioe) {
+            throw new SAXException("Error in XMLFormatter", ioe);
+        }
+    }
+
+    /**
      * Receive notification of the beginning of the document.
      *
      * @exception   org.xml.sax.SAXException    on any errors
-     * @see         org.xml.sax.ContentHandler#startDocument
+     * @see         org.xml.sax.ContentHandler#startDocument()
      */
     @Override
     public void startDocument() throws SAXException {
@@ -152,7 +222,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
      * Receive notification of the end of the document.
      *
      * @exception   org.xml.sax.SAXException    on any errors
-     * @see         org.xml.sax.ContentHandler#endDocument
+     * @see         org.xml.sax.ContentHandler#endDocument()
      */
     @Override
     public void endDocument() throws SAXException {
@@ -166,7 +236,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         if (!XML.isAllWhiteSpace(data))
             throw new SAXException("Data after last element");
         try {
-            checkData();
+            write(checkData());
         }
         catch (IOException ioe) {
             throw new SAXException("Error in XMLFormatter", ioe);
@@ -179,10 +249,10 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
      * @param   prefix  the Namespace prefix being declared
      * @param   uri     the Namespace URI mapped to the prefix
      * @exception       org.xml.sax.SAXException    on any errors
-     * @see     org.xml.sax.ContentHandler#startPrefixMapping
+     * @see     org.xml.sax.ContentHandler#startPrefixMapping(String, String)
      */
     @Override
-    public void startPrefixMapping (String prefix, String uri) throws SAXException {
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {
         if (prefix == null || uri == null)
             throw new SAXException("Null argument not allowed");
         if ("xml".equals(prefix))
@@ -195,10 +265,10 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
      *
      * @param   prefix  the Namespace prefix
      * @exception       org.xml.sax.SAXException    on any errors
-     * @see     org.xml.sax.ContentHandler#endPrefixMapping
+     * @see     org.xml.sax.ContentHandler#endPrefixMapping(String)
      */
     @Override
-    public void endPrefixMapping (String prefix) throws SAXException {
+    public void endPrefixMapping(String prefix) throws SAXException {
         if (prefix == null)
             throw new SAXException("Null argument not allowed");
         // do nothing
@@ -222,7 +292,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         if (documentEnded)
             throw new SAXException("Document already ended");
         try {
-            checkData();
+            write(checkData());
             if (whitespace == Whitespace.INDENT)
                 writeSpaces(elements.size() * getIndent());
             int prefixMappingIndex = elements.isEmpty() ? 0 :
@@ -395,7 +465,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         if (documentEnded)
             throw new SAXException("Document already ended");
         try {
-            checkData();
+            write(checkData());
             if (target.indexOf("?>") >= 0 || data.indexOf("?>") >= 0)
                 throw new SAXParseException("Illegal content in processing instruction",
                         locator);
@@ -439,7 +509,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         if (documentEnded)
             throw new SAXException("Document already ended");
         try {
-            checkData();
+            write(checkData());
             if (whitespace == Whitespace.INDENT)
                 writeSpaces(elements.size() * getIndent());
             write("<![CDATA[");
@@ -476,7 +546,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         if (documentEnded)
             throw new SAXException("Document already ended");
         try {
-            checkData();
+            write(checkData());
             if (whitespace == Whitespace.INDENT)
                 writeSpaces(elements.size() * getIndent());
             for (int i = 0, n = length - 1; i < n; i++) {
@@ -532,8 +602,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         return createPrefix(null);
     }
 
-    private void checkData() throws IOException {
-        // TODO consider whether individual writes would be better than use of StringBuilder
+    private String checkData() {
         StringBuilder output = new StringBuilder();
         String data = this.data.toString();
         this.data.setLength(0);
@@ -578,15 +647,11 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
                 output.append(eol);
             }
         }
-        write(output);
+        return output.toString();
     }
 
     private void write(String str) throws IOException {
         getWriter().write(str);
-    }
-
-    private void write(CharSequence csq) throws IOException {
-        getWriter().write(csq.toString());
     }
 
     private void write(char ch) throws IOException {
@@ -640,6 +705,10 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
 
     public void setIndent(int indent) {
         this.indent = indent;
+    }
+
+    private static boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
     }
 
     public static void main(String[] args) {
@@ -699,6 +768,8 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
                 else
                     throw new UserError("Unrecognised argument - " + arg);
             }
+            if (in == null)
+                throw new UserError("No -in specified");
             if (out != null) {
                 try (OutputStream os = new FileOutputStream(out)) {
                     run(os, in, ws, indent);
