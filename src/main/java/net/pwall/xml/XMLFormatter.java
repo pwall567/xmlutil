@@ -717,6 +717,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
             File out = null;
             Whitespace ws = null;
             int indent = -1;
+            Boolean nsAware = null;
             for (int i = 0; i < args.length; ++i) {
                 String arg = args[i];
                 if (arg.equals("-in")) {
@@ -765,21 +766,33 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
                         throw new UserError("Illegal -indent");
                     }
                 }
+                else if (arg.equals("-ns")) {
+                    if (nsAware != null)
+                        throw new UserError("Duplicate -[no]ns");
+                    nsAware = Boolean.TRUE;
+                }
+                else if (arg.equals("-nons")) {
+                    if (nsAware != null)
+                        throw new UserError("Duplicate -[no]ns");
+                    nsAware = Boolean.FALSE;
+                }
                 else
                     throw new UserError("Unrecognised argument - " + arg);
             }
             if (in == null)
                 throw new UserError("No -in specified");
+            if (nsAware == null)
+                nsAware = Boolean.FALSE;
             if (out != null) {
                 try (OutputStream os = new FileOutputStream(out)) {
-                    run(os, in, ws, indent);
+                    run(os, in, ws, indent, nsAware);
                 }
                 catch (IOException ioe) {
                     throw new RuntimeException("Error writing output file", ioe);
                 }
             }
             else
-                run(System.out, in, ws, indent);
+                run(System.out, in, ws, indent, nsAware);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -787,15 +800,19 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         }
     }
 
-    private static void run(OutputStream os, File in, Whitespace ws, int indent) {
+    private static void run(OutputStream os, File in, Whitespace ws, int indent,
+            boolean nsAware) {
         try (XMLFormatter formatter = new XMLFormatter(os);
                 InputStream is = new FileInputStream(in)) {
             formatter.setWhitespace(ws != null ? ws : Whitespace.INDENT);
             formatter.setIndent(indent >= 0 ? indent : 2);
             formatter.prefix();
             XMLReader reader = XMLReaderFactory.createXMLReader();
+            reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             reader.setFeature("http://xml.org/sax/features/validation", false);
             reader.setFeature("http://xml.org/sax/features/resolve-dtd-uris", false);
+            reader.setFeature("http://xml.org/sax/features/namespaces", nsAware);
             reader.setContentHandler(formatter);
             reader.setErrorHandler(formatter);
             try {
