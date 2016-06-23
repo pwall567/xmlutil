@@ -41,6 +41,17 @@ import net.pwall.util.Strings.SpaceTest;
  */
 public class XML {
 
+    public static final String NAMESPACES_FEATURE = "http://xml.org/sax/features/namespaces";
+    public static final String VALIDATION_FEATURE = "http://xml.org/sax/features/validation";
+    public static final String RESOLVE_DTD_URIS_FEATURE =
+            "http://xml.org/sax/features/resolve-dtd-uris";
+    public static final String EXTERNAL_GENERAL_ENTITIES_FEATURE =
+            "http://xml.org/sax/features/external-general-entities";
+    public static final String EXTERNAL_PARAMETER_ENTITIES_FEATURE =
+            "http://xml.org/sax/features/external-parameter-entities";
+    public static final String LEXICAL_HANDLER_PROPERTY =
+            "http://xml.org/sax/properties/lexical-handler";
+
     private static DocumentBuilderFactory docBuilderFactory = null;
     private static DocumentBuilderFactory docBuilderFactoryNS = null;
 

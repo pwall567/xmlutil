@@ -718,13 +718,14 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
             Whitespace ws = null;
             int indent = -1;
             Boolean nsAware = null;
+            Boolean extEntities = null;
             for (int i = 0; i < args.length; ++i) {
                 String arg = args[i];
                 if (arg.equals("-in")) {
                     if (++i >= args.length || args[i].startsWith("-"))
                         throw new UserError("-in with no pathname");
                     if (in != null)
-                        throw new UserError("Duplicate -in");
+                        throw new UserError("Duplicate " + arg);
                     in = new File(args[i]);
                     if (!in.exists() || !in.isFile())
                         throw new UserError("-in file does not exist - " + args[i]);
@@ -733,7 +734,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
                     if (++i >= args.length || args[i].startsWith("-"))
                         throw new UserError("-out with no pathname");
                     if (out != null)
-                        throw new UserError("Duplicate -out");
+                        throw new UserError("Duplicate " + arg);
                     out = new File(args[i]);
                 }
                 else if (arg.equals("-whitespace") || arg.equals("-ws")) {
@@ -754,7 +755,7 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
                     if (++i >= args.length || args[i].startsWith("-"))
                         throw new UserError("-indent with no value");
                     if (indent >= 0)
-                        throw new UserError("Duplicate -indent");
+                        throw new UserError("Duplicate " + arg);
                     if (ws == Whitespace.ALL || ws == Whitespace.NONE)
                         throw new UserError("-indent conflicts with whitespace option");
                     try {
@@ -766,15 +767,25 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
                         throw new UserError("Illegal -indent");
                     }
                 }
-                else if (arg.equals("-ns")) {
+                else if (arg.equals("-ns")) { // make parser namespace-aware
                     if (nsAware != null)
-                        throw new UserError("Duplicate -[no]ns");
+                        throw new UserError("Duplicate " + arg);
                     nsAware = Boolean.TRUE;
                 }
                 else if (arg.equals("-nons")) {
                     if (nsAware != null)
-                        throw new UserError("Duplicate -[no]ns");
+                        throw new UserError("Duplicate " + arg);
                     nsAware = Boolean.FALSE;
+                }
+                else if (arg.equals("-ext")) { // allow external entities
+                    if (extEntities != null)
+                        throw new UserError("Duplicate " + arg);
+                    extEntities = Boolean.TRUE;
+                }
+                else if (arg.equals("-noext")) {
+                    if (extEntities != null)
+                        throw new UserError("Duplicate " + arg);
+                    extEntities = Boolean.FALSE;
                 }
                 else
                     throw new UserError("Unrecognised argument - " + arg);
@@ -783,16 +794,18 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
                 throw new UserError("No -in specified");
             if (nsAware == null)
                 nsAware = Boolean.FALSE;
+            if (extEntities == null)
+                extEntities = Boolean.FALSE;
             if (out != null) {
                 try (OutputStream os = new FileOutputStream(out)) {
-                    run(os, in, ws, indent, nsAware);
+                    run(os, in, ws, indent, nsAware, extEntities);
                 }
                 catch (IOException ioe) {
                     throw new RuntimeException("Error writing output file", ioe);
                 }
             }
             else
-                run(System.out, in, ws, indent, nsAware);
+                run(System.out, in, ws, indent, nsAware, extEntities);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -801,22 +814,22 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
     }
 
     private static void run(OutputStream os, File in, Whitespace ws, int indent,
-            boolean nsAware) {
+            boolean nsAware, boolean extEntities) {
         try (XMLFormatter formatter = new XMLFormatter(os);
                 InputStream is = new FileInputStream(in)) {
             formatter.setWhitespace(ws != null ? ws : Whitespace.INDENT);
             formatter.setIndent(indent >= 0 ? indent : 2);
             formatter.prefix();
             XMLReader reader = XMLReaderFactory.createXMLReader();
-            reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            reader.setFeature("http://xml.org/sax/features/validation", false);
-            reader.setFeature("http://xml.org/sax/features/resolve-dtd-uris", false);
-            reader.setFeature("http://xml.org/sax/features/namespaces", nsAware);
+            reader.setFeature(XML.VALIDATION_FEATURE, false);
+            reader.setFeature(XML.RESOLVE_DTD_URIS_FEATURE, false);
+            reader.setFeature(XML.NAMESPACES_FEATURE, nsAware);
+            reader.setFeature(XML.EXTERNAL_GENERAL_ENTITIES_FEATURE, extEntities);
+            reader.setFeature(XML.EXTERNAL_PARAMETER_ENTITIES_FEATURE, extEntities);
             reader.setContentHandler(formatter);
             reader.setErrorHandler(formatter);
             try {
-                reader.setProperty("http://xml.org/sax/properties/lexical-handler", formatter);
+                reader.setProperty(XML.LEXICAL_HANDLER_PROPERTY, formatter);
             }
             catch (SAXNotRecognizedException e) {
                 // ignore
