@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xt:template prefix="true" whitespace="indent" output="html"
+    xmlns:xt="http://pwall.net/xml/xt/0.1" xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pwall.net/xml/xt/0.1 http://pwall.net/xsd/xt-0.1.xsd">
+  <xt:doctype name="html"/>
+  <xt:set name="keywords" value="'Peter Wall,peter,wall'"/>
+  <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+       <title>My page title</title>
+    </head>
+    <body>
+<![CDATA[
+Dummy...
+]]>
+    </body>
+  </html>
+</xt:template>
