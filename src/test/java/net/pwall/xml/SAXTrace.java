@@ -1,5 +1,26 @@
 /*
  * @(#) SAXTrace.java
+ *
+ * xmlutil XML Library
+ * Copyright (c) 2015, 2016 Peter Wall
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package net.pwall.xml;
@@ -22,7 +43,8 @@ import org.xml.sax.ext.DefaultHandler2;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * Tracing implementation of SAX interfaces.
+ * Tracing implementation of SAX interfaces.  Useful for determining the sequence of SAX events
+ * generated for a specific section of XML.
  */
 public class SAXTrace extends DefaultHandler2 {
 
@@ -240,6 +262,7 @@ public class SAXTrace extends DefaultHandler2 {
     }
 
     public static void main(String[] args) {
+        PrintStream ps = System.out;
         boolean nsAware = false;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -247,38 +270,26 @@ public class SAXTrace extends DefaultHandler2 {
                 nsAware = true;
             // check more switches?
             else
-                process(arg, nsAware);
+                process(ps, arg, nsAware);
         }
     }
 
-//    private static void process(String filename, boolean nsAware) {
-//        SAXTrace saxTrace = new SAXTrace();
-//        try (InputStream is = new FileInputStream(filename)) {
-//            SAXParserFactory factory = SAXParserFactory.newInstance();
-//            if (nsAware)
-//                factory.setNamespaceAware(true);
-//            SAXParser parser = factory.newSAXParser();
-//            parser.parse(is, saxTrace);
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-    private static void process(String filename, boolean nsAware) {
-        SAXTrace saxTrace = new SAXTrace();
+    private static void process(PrintStream ps, String filename, boolean nsAware) {
+        ps.println("SaxTrace - " + filename + " - namespaces " + (nsAware ? "en" : "dis") +
+                "abled");
+        SAXTrace saxTrace = new SAXTrace(ps);
         try (InputStream is = new FileInputStream(filename)) {
             XMLReader reader = XMLReaderFactory.createXMLReader();
-            reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            reader.setFeature("http://xml.org/sax/features/validation", false);
-            reader.setFeature("http://xml.org/sax/features/resolve-dtd-uris", false);
-            reader.setFeature("http://xml.org/sax/features/namespaces", nsAware);
+            reader.setFeature(XML.EXTERNAL_GENERAL_ENTITIES_FEATURE, false);
+            reader.setFeature(XML.EXTERNAL_PARAMETER_ENTITIES_FEATURE, false);
+            reader.setFeature(XML.VALIDATION_FEATURE, false);
+            reader.setFeature(XML.RESOLVE_DTD_URIS_FEATURE, false);
+            reader.setFeature(XML.NAMESPACES_FEATURE, nsAware);
             reader.setContentHandler(saxTrace);
             reader.setDTDHandler(saxTrace);
             reader.setErrorHandler(saxTrace);
             try {
-                reader.setProperty("http://xml.org/sax/properties/lexical-handler", saxTrace);
+                reader.setProperty(XML.LEXICAL_HANDLER_PROPERTY, saxTrace);
             }
             catch (SAXNotRecognizedException e) {
                 // ignore

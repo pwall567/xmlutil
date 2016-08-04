@@ -11,6 +11,7 @@ import java.util.Objects;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -46,7 +47,7 @@ public class DOM2SAX {
         contentHandler.startDocument();
         Element element = document.getDocumentElement();
         processElement(contentHandler, lexicalHandler, element);
-        // tbc
+        // anything else?
         contentHandler.endDocument();
     }
 
@@ -57,7 +58,7 @@ public class DOM2SAX {
 
     private void processElement(ContentHandler contentHandler, LexicalHandler lexicalHandler,
             Element element) throws SAXException {
-        String uri = element.getNamespaceURI();
+        String uri = uriString(element.getNamespaceURI());
         String localName = element.getLocalName();
         String qName = element.getNodeName();
         AttributesImpl atts = new AttributesImpl();
@@ -66,16 +67,13 @@ public class DOM2SAX {
             Attr attr = (Attr)attributes.item(i);
             String attrName = attr.getName();
             String attrValue = attr.getValue();
-            if (attrName != null && attrName.equals("xmlns")) {
+            if ("xmlns".equals(attrName))
                 contentHandler.startPrefixMapping("", attrValue);
-            }
-            else if (attrName != null && attrName.length() > 6 &&
-                    attrName.startsWith("xmlns:")) {
+            else if (xmlnsAttr(attrName))
                 contentHandler.startPrefixMapping(attrName.substring(6), attrValue);
-            }
             else
-                atts.addAttribute(attr.getNamespaceURI(), attr.getLocalName(), attrName,
-                        "CDATA", attr.getValue()); // ???
+                atts.addAttribute(uriString(attr.getNamespaceURI()), attr.getLocalName(),
+                        attrName, "CDATA", attrValue);
         }
         contentHandler.startElement(uri, localName, qName, atts);
 
@@ -84,13 +82,6 @@ public class DOM2SAX {
             Node child = children.item(i);
             if (child instanceof Element) {
                 processElement(contentHandler, lexicalHandler, (Element)child);
-            }
-            else if (child instanceof Text) {
-                String data = ((Text)child).getData();
-                int length = data.length();
-                char[] chars = new char[length];
-                data.getChars(0, length, chars, 0);
-                contentHandler.characters(chars, 0, length);
             }
             else if (child instanceof CDATASection) {
                 String data = ((CDATASection)child).getData();
@@ -103,10 +94,43 @@ public class DOM2SAX {
                 if (lexicalHandler != null)
                     lexicalHandler.endCDATA();
             }
+            else if (child instanceof Text) {
+                String data = ((Text)child).getData();
+                int length = data.length();
+                char[] chars = new char[length];
+                data.getChars(0, length, chars, 0);
+                contentHandler.characters(chars, 0, length);
+            }
+            else if (child instanceof Comment) {
+                if (lexicalHandler != null) {
+                    String data = ((Comment)child).getData();
+                    int length = data.length();
+                    char[] chars = new char[length];
+                    data.getChars(0, length, chars, 0);
+                    lexicalHandler.comment(chars, 0, length);
+                }
+            }
             // any other node types?
         }
 
         contentHandler.endElement(uri, localName, qName);
+
+        for (int i = 0; i < attributes.getLength(); i++) {
+            Attr attr = (Attr)attributes.item(i);
+            String attrName = attr.getName();
+            if ("xmlns".equals(attrName))
+                contentHandler.endPrefixMapping("");
+            else if (xmlnsAttr(attrName))
+                contentHandler.endPrefixMapping(attrName.substring(6));
+        }
+    }
+
+    private static String uriString(String uri) {
+        return uri == null ? "" : uri;
+    }
+
+    private static boolean xmlnsAttr(String attrName) {
+        return attrName != null && attrName.length() > 6 && attrName.startsWith("xmlns:");
     }
 
 }
