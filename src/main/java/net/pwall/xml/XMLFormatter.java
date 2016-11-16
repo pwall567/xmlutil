@@ -102,8 +102,8 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         indent = 2;
         data = new StringBuilder();
         elementCloseAngleBracketPending = false;
-        elements = new ArrayList<>();
-        prefixMappings = new ArrayList<>();
+        elements = new ArrayList<Element>();
+        prefixMappings = new ArrayList<PrefixMapping>();
         writer = null;
         inCDATA = false;
         locator = null;
@@ -797,11 +797,17 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
             if (extEntities == null)
                 extEntities = Boolean.FALSE;
             if (out != null) {
-                try (OutputStream os = new FileOutputStream(out)) {
+                OutputStream os = null;
+                try {
+                    os = new FileOutputStream(out);
                     run(os, in, ws, indent, nsAware, extEntities);
                 }
                 catch (IOException ioe) {
                     throw new RuntimeException("Error writing output file", ioe);
+                }
+                finally {
+                    if (os != null)
+                        os.close();
                 }
             }
             else
@@ -815,26 +821,36 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
 
     private static void run(OutputStream os, File in, Whitespace ws, int indent,
             boolean nsAware, boolean extEntities) {
-        try (XMLFormatter formatter = new XMLFormatter(os);
-                InputStream is = new FileInputStream(in)) {
-            formatter.setWhitespace(ws != null ? ws : Whitespace.INDENT);
-            formatter.setIndent(indent >= 0 ? indent : 2);
-            formatter.prefix();
-            XMLReader reader = XMLReaderFactory.createXMLReader();
-            reader.setFeature(XML.VALIDATION_FEATURE, false);
-            reader.setFeature(XML.RESOLVE_DTD_URIS_FEATURE, false);
-            reader.setFeature(XML.NAMESPACES_FEATURE, nsAware);
-            reader.setFeature(XML.EXTERNAL_GENERAL_ENTITIES_FEATURE, extEntities);
-            reader.setFeature(XML.EXTERNAL_PARAMETER_ENTITIES_FEATURE, extEntities);
-            reader.setContentHandler(formatter);
-            reader.setErrorHandler(formatter);
+        try {
+            XMLFormatter formatter = new XMLFormatter(os);
+            InputStream is = new FileInputStream(in);
             try {
-                reader.setProperty(XML.LEXICAL_HANDLER_PROPERTY, formatter);
+                formatter.setWhitespace(ws != null ? ws : Whitespace.INDENT);
+                formatter.setIndent(indent >= 0 ? indent : 2);
+                formatter.prefix();
+                XMLReader reader = XMLReaderFactory.createXMLReader();
+                reader.setFeature(XML.VALIDATION_FEATURE, false);
+                reader.setFeature(XML.RESOLVE_DTD_URIS_FEATURE, false);
+                reader.setFeature(XML.NAMESPACES_FEATURE, nsAware);
+                reader.setFeature(XML.EXTERNAL_GENERAL_ENTITIES_FEATURE, extEntities);
+                reader.setFeature(XML.EXTERNAL_PARAMETER_ENTITIES_FEATURE, extEntities);
+                reader.setContentHandler(formatter);
+                reader.setErrorHandler(formatter);
+                try {
+                    reader.setProperty(XML.LEXICAL_HANDLER_PROPERTY, formatter);
+                }
+                catch (SAXNotRecognizedException e) {
+                    // ignore
+                }
+                reader.parse(new InputSource(is));
             }
-            catch (SAXNotRecognizedException e) {
-                // ignore
+            catch (Exception e) {
+                throw new RuntimeException("Unexpected error", e);
             }
-            reader.parse(new InputSource(is));
+            finally {
+                is.close();
+                formatter.close();
+            }
         }
         catch (Exception e) {
             throw new RuntimeException("Unexpected error", e);

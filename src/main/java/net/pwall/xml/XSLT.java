@@ -63,8 +63,14 @@ public class XSLT implements Runnable {
 //                    new StreamResult(System.out);
 //            transformer.transform(input, output);
             if (inFile != null) {
-                try (InputStream is = new BufferedInputStream(new FileInputStream(inFile))) {
+                InputStream is = null;
+                try {
+                    is = new BufferedInputStream(new FileInputStream(inFile));
                     transform(transformer, is);
+                }
+                finally {
+                    if (is != null)
+                        is.close();
                 }
             }
             else
@@ -210,7 +216,7 @@ public class XSLT implements Runnable {
 
     public void setParam(String key, String value) {
         if (params == null)
-            params = new HashMap<>();
+            params = new HashMap<String, String>();
         params.put(key, value);
     }
 

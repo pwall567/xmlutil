@@ -69,31 +69,40 @@ public class XMLDirectory implements Runnable {
     }
 
     private void run(OutputStream out) {
-        try (XMLFormatter formatter = new XMLFormatter(out, XMLFormatter.Whitespace.INDENT)) {
-            if (indent >= 0)
-                formatter.setIndent(indent);
-            if (dir == null)
-                dir = new File(".");
-            formatter.setEncoding(encoding != null ? encoding : defaultEncoding);
-            formatter.prefix();
-            formatter.xslProcessingInstruction(xslt);
-            formatter.startDocument();
-            AttributesImpl attributes = new AttributesImpl();
-            addAttribute(attributes, pathAttrName, dir.getAbsolutePath());
-            if (title != null)
-                addAttribute(attributes, titleAttrName, title);
-            if (namespaceURI != null)
-                formatter.startPrefixMapping(namespacePrefix == null ? "" : namespacePrefix,
-                        namespaceURI);
-            startElement(formatter, directoryListElemName, attributes);
-            outputDirectory(formatter, dir);
-            endElement(formatter, directoryListElemName);
-            if (namespaceURI != null)
-                formatter.endPrefixMapping(namespacePrefix == null ? "" : namespacePrefix);
-            formatter.endDocument();
+        try {
+            XMLFormatter formatter = new XMLFormatter(out, XMLFormatter.Whitespace.INDENT);
+            try {
+                if (indent >= 0)
+                    formatter.setIndent(indent);
+                if (dir == null)
+                    dir = new File(".");
+                formatter.setEncoding(encoding != null ? encoding : defaultEncoding);
+                formatter.prefix();
+                formatter.xslProcessingInstruction(xslt);
+                formatter.startDocument();
+                AttributesImpl attributes = new AttributesImpl();
+                addAttribute(attributes, pathAttrName, dir.getAbsolutePath());
+                if (title != null)
+                    addAttribute(attributes, titleAttrName, title);
+                if (namespaceURI != null)
+                    formatter.startPrefixMapping(namespacePrefix == null ? "" : namespacePrefix,
+                            namespaceURI);
+                startElement(formatter, directoryListElemName, attributes);
+                outputDirectory(formatter, dir);
+                endElement(formatter, directoryListElemName);
+                if (namespaceURI != null)
+                    formatter.endPrefixMapping(namespacePrefix == null ? "" : namespacePrefix);
+                formatter.endDocument();
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Unexpected exception in XMLDirectory", e);
+            }
+            finally {
+                formatter.close();
+            }
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception in XMLDirectory", e);
+            e.printStackTrace();
         }
     }
 

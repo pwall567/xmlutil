@@ -33,11 +33,20 @@ public class TryDOM2SAX {
     }
 
     public static void format(String filename) {
-        try (XMLFormatter formatter = new XMLFormatter(os);
-                InputStream is = new FileInputStream(filename)) {
-            Document document = XML.getDocumentBuilderNS().parse(is);
-            DOM2SAX dom2sax = new DOM2SAX(document);
-            dom2sax.process(formatter);
+        XMLFormatter formatter = new XMLFormatter(os);
+        try {
+            InputStream is = new FileInputStream(filename);
+            try {
+                Document document = XML.getDocumentBuilderNS().parse(is);
+                DOM2SAX dom2sax = new DOM2SAX(document);
+                dom2sax.process(formatter);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+            finally {
+                is.close();
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -46,10 +55,19 @@ public class TryDOM2SAX {
 
     public static void trace(String filename) {
         SAXTrace saxTrace = new SAXTrace();
-        try (InputStream is = new FileInputStream(filename)) {
-            Document document = XML.getDocumentBuilderNS().parse(is);
-            DOM2SAX dom2sax = new DOM2SAX(document);
-            dom2sax.process(saxTrace);
+        try {
+            InputStream is = new FileInputStream(filename);
+            try {
+                Document document = XML.getDocumentBuilderNS().parse(is);
+                DOM2SAX dom2sax = new DOM2SAX(document);
+                dom2sax.process(saxTrace);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+            finally {
+                is.close();
+            }
         }
         catch (Exception e) {
             e.printStackTrace();

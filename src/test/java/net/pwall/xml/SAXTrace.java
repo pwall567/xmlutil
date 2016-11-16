@@ -278,24 +278,33 @@ public class SAXTrace extends DefaultHandler2 {
         ps.println("SaxTrace - " + filename + " - namespaces " + (nsAware ? "en" : "dis") +
                 "abled");
         SAXTrace saxTrace = new SAXTrace(ps);
-        try (InputStream is = new FileInputStream(filename)) {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
-            reader.setFeature(XML.EXTERNAL_GENERAL_ENTITIES_FEATURE, false);
-            reader.setFeature(XML.EXTERNAL_PARAMETER_ENTITIES_FEATURE, false);
-            reader.setFeature(XML.VALIDATION_FEATURE, false);
-            reader.setFeature(XML.RESOLVE_DTD_URIS_FEATURE, false);
-            reader.setFeature(XML.NAMESPACES_FEATURE, nsAware);
-            reader.setContentHandler(saxTrace);
-            reader.setDTDHandler(saxTrace);
-            reader.setErrorHandler(saxTrace);
+        try {
+            InputStream is = new FileInputStream(filename);
             try {
-                reader.setProperty(XML.LEXICAL_HANDLER_PROPERTY, saxTrace);
+                XMLReader reader = XMLReaderFactory.createXMLReader();
+                reader.setFeature(XML.EXTERNAL_GENERAL_ENTITIES_FEATURE, false);
+                reader.setFeature(XML.EXTERNAL_PARAMETER_ENTITIES_FEATURE, false);
+                reader.setFeature(XML.VALIDATION_FEATURE, false);
+                reader.setFeature(XML.RESOLVE_DTD_URIS_FEATURE, false);
+                reader.setFeature(XML.NAMESPACES_FEATURE, nsAware);
+                reader.setContentHandler(saxTrace);
+                reader.setDTDHandler(saxTrace);
+                reader.setErrorHandler(saxTrace);
+                try {
+                    reader.setProperty(XML.LEXICAL_HANDLER_PROPERTY, saxTrace);
+                }
+                catch (SAXNotRecognizedException e) {
+                    // ignore
+                }
+                InputSource in = new InputSource(is);
+                reader.parse(in);
             }
-            catch (SAXNotRecognizedException e) {
-                // ignore
+            catch (Exception e) {
+                e.printStackTrace();
             }
-            InputSource in = new InputSource(is);
-            reader.parse(in);
+            finally {
+                is.close();
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
