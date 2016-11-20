@@ -51,7 +51,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  *
  * @author Peter Wall
  */
-public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
+public class XMLFormatter extends DefaultHandler2 {
 
     /**
      * Enumeration to control whitespace handling in the formatted output:
@@ -126,7 +126,6 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
      *
      * @throws IOException on any errors closing the output {@link Writer}.
      */
-    @Override
     public void close() throws IOException {
         if (writer != null) {
             writer.close();
