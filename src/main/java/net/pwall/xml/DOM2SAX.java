@@ -7,8 +7,6 @@
 
 package net.pwall.xml;
 
-import java.util.Objects;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
@@ -34,7 +32,7 @@ public class DOM2SAX {
     private Document document;
 
     public DOM2SAX(Document document) {
-        this.document = Objects.requireNonNull(document);
+        this.document = requireNonNull(document);
     }
 
     public Document getDocument() {
@@ -43,7 +41,7 @@ public class DOM2SAX {
 
     public void process(ContentHandler contentHandler, LexicalHandler lexicalHandler)
             throws SAXException {
-        Objects.requireNonNull(contentHandler);
+        requireNonNull(contentHandler);
         contentHandler.startDocument();
         Element element = document.getDocumentElement();
         processElement(contentHandler, lexicalHandler, element);
@@ -52,7 +50,7 @@ public class DOM2SAX {
     }
 
     public void process(DefaultHandler2 defaultHandler2) throws SAXException {
-        Objects.requireNonNull(defaultHandler2);
+        requireNonNull(defaultHandler2);
         process(defaultHandler2, defaultHandler2);
     }
 
@@ -131,6 +129,12 @@ public class DOM2SAX {
 
     private static boolean xmlnsAttr(String attrName) {
         return attrName != null && attrName.length() > 6 && attrName.startsWith("xmlns:");
+    }
+
+    private static <T> T requireNonNull(T obj) {
+        if (obj == null)
+            throw new NullPointerException();
+        return obj;
     }
 
 }

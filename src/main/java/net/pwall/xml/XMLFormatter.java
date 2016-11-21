@@ -31,7 +31,6 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import net.pwall.util.UserError;
 
@@ -329,8 +328,8 @@ public class XMLFormatter extends DefaultHandler2 {
         if (n == 0)
             return false;
         Element e = elements.remove(n - 1);
-        return Objects.equals(uri, e.getUri()) && Objects.equals(localName, e.getLocalName()) &&
-                Objects.equals(qName, e.getQName());
+        return equals(uri, e.getUri()) && equals(localName, e.getLocalName()) &&
+                equals(qName, e.getQName());
     }
 
     @Override
@@ -854,6 +853,10 @@ public class XMLFormatter extends DefaultHandler2 {
         catch (Exception e) {
             throw new RuntimeException("Unexpected error", e);
         }
+    }
+
+    private static boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
     }
 
     /**

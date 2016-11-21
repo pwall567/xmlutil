@@ -3,6 +3,10 @@ Added this change log after project was already under way.  Early changes are no
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.4] - 2016-11-21
+### Changed
+- Yet more changes to accommodate Java 6
+
 ## [1.0.3] - 2016-11-21
 ### Changed
 - Yet more changes to accommodate Java 6

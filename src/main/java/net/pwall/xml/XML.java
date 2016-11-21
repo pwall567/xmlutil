@@ -7,7 +7,6 @@ package net.pwall.xml;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -512,7 +511,7 @@ public class XML {
      * @return          {@code true} if the names match
      */
     public static boolean match(Element elem, String tagName) {
-        return Objects.equals(elem.getTagName(), tagName);
+        return equals(elem.getTagName(), tagName);
     }
 
     /**
@@ -524,8 +523,8 @@ public class XML {
      * @return                  {@code true} if the names match
      */
     public static boolean matchNS(Element elem, String localName, String namespaceURI) {
-        return Objects.equals(elem.getLocalName(), localName) &&
-                Objects.equals(elem.getNamespaceURI(), namespaceURI);
+        return equals(elem.getLocalName(), localName) &&
+                equals(elem.getNamespaceURI(), namespaceURI);
     }
 
     /**
@@ -637,6 +636,10 @@ public class XML {
                 throw new XMLException(message);
             }
         }
+    }
+
+    private static boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
     }
 
 }
