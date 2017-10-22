@@ -1,5 +1,26 @@
 /*
  * @(#) XML.java
+ *
+ * javautil Java Utility Library
+ * Copyright (c) 2013, 2014, 2015, 2016, 2017 Peter Wall
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package net.pwall.xml;
@@ -8,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.function.IntPredicate;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -26,7 +48,6 @@ import net.pwall.util.CharMapper;
 import net.pwall.util.CharMapperEntry;
 import net.pwall.util.CharUnmapper;
 import net.pwall.util.Strings;
-import net.pwall.util.Strings.SpaceTest;
 
 /**
  * Static methods for working with XML.
@@ -55,12 +76,7 @@ public class XML {
     private static DocumentBuilderFactory docBuilderFactory = null;
     private static DocumentBuilderFactory docBuilderFactoryNS = null;
 
-    private static final SpaceTest spaceTest = new SpaceTest() {
-        @Override
-        public boolean isSpace(int ch) {
-            return isWhiteSpace(ch);
-        }
-    };
+    private static final IntPredicate spaceTest = (ch) -> isWhiteSpace(ch);
 
     private static final CharMapperEntry[] predefinedEntityMappings = new CharMapperEntry[] {
         new CharMapperEntry('&', "&amp;"),
@@ -70,70 +86,61 @@ public class XML {
         new CharMapperEntry('"', "&quot;")
     };
 
-    private static final CharMapper defaultCharMapper = new CharMapper() {
-        @Override
-        public String map(int codePoint) {
-            if (codePoint == '<')
-                return "&lt;";
-            if (codePoint == '>')
-                return "&gt;";
-            if (codePoint == '&')
-                return "&amp;";
-            if (codePoint == '"')
-                return "&quot;";
-            if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
-                StringBuilder sb = new StringBuilder(10);
-                sb.append("&#");
-                sb.append(codePoint);
-                sb.append(';');
-                return sb.toString();
-            }
-            return null;
+    private static final CharMapper defaultCharMapper = (codePoint) -> {
+        if (codePoint == '<')
+            return "&lt;";
+        if (codePoint == '>')
+            return "&gt;";
+        if (codePoint == '&')
+            return "&amp;";
+        if (codePoint == '"')
+            return "&quot;";
+        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
+            StringBuilder sb = new StringBuilder(10);
+            sb.append("&#");
+            sb.append(codePoint);
+            sb.append(';');
+            return sb.toString();
         }
+        return null;
     };
 
-    private static final CharMapper allCharMapper = new CharMapper() {
-        @Override
-        public String map(int codePoint) {
-            if (codePoint == '<')
-                return "&lt;";
-            if (codePoint == '>')
-                return "&gt;";
-            if (codePoint == '&')
-                return "&amp;";
-            if (codePoint == '"')
-                return "&quot;";
-            if (codePoint == '\'')
-                return "&apos;";
-            if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
-                StringBuilder sb = new StringBuilder(10);
-                sb.append("&#");
-                sb.append(codePoint);
-                sb.append(';');
-                return sb.toString();
-            }
-            return null;
+    private static final CharMapper allCharMapper = (codePoint) -> {
+        if (codePoint == '<')
+            return "&lt;";
+        if (codePoint == '>')
+            return "&gt;";
+        if (codePoint == '&')
+            return "&amp;";
+        if (codePoint == '"')
+            return "&quot;";
+        if (codePoint == '\'')
+            return "&apos;";
+        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
+            StringBuilder sb = new StringBuilder(10);
+            sb.append("&#");
+            sb.append(codePoint);
+            sb.append(';');
+            return sb.toString();
         }
+        return null;
     };
 
-    private static final CharMapper dataCharMapper = new CharMapper() {
-        @Override
-        public String map(int codePoint) {
-            if (codePoint == '<')
-                return "&lt;";
-            if (codePoint == '>')
-                return "&gt;";
-            if (codePoint == '&')
-                return "&amp;";
-            if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
-                StringBuilder sb = new StringBuilder(10);
-                sb.append("&#");
-                sb.append(codePoint);
-                sb.append(';');
-                return sb.toString();
-            }
-            return null;
+    private static final CharMapper dataCharMapper = (codePoint) -> {
+        if (codePoint == '<')
+            return "&lt;";
+        if (codePoint == '>')
+            return "&gt;";
+        if (codePoint == '&')
+            return "&amp;";
+        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
+            StringBuilder sb = new StringBuilder(10);
+            sb.append("&#");
+            sb.append(codePoint);
+            sb.append(';');
+            return sb.toString();
         }
+        return null;
     };
 
     private static final CharUnmapper unmapper = new CharUnmapper() {
@@ -349,12 +356,33 @@ public class XML {
         }
     }
 
+    /**
+     * Escape a UTF-16 string for use in XML, with the default set of character mappings.
+     * Specifically, this method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt><tt>&quot;</tt> (double quote)</dt>
+     * <dd><tt>&amp;quot;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   s       the UTF-16 string to be escaped
+     * @return          the escaped string
+     * @throws          NullPointerException if the input string is {@code null}
+     */
     public static String escapeUTF16(String s) {
         return Strings.escapeUTF16(s, defaultCharMapper);
     }
 
     /**
-     * Escape a string for use in XML.  Specifically, this method converts:
+     * Escape a string for use in XML, with the default set of character mappings.
+     * Specifically, this method converts:
      * <dl>
      * <dt><tt>&lt;</tt> (less than)</dt>
      * <dd><tt>&amp;lt;</tt></dd>
@@ -370,40 +398,202 @@ public class XML {
      *
      * @param   s       the string to be escaped
      * @return          the escaped string
-     * @throws          NullPointerException if the input string is null
+     * @throws          NullPointerException if the input string is {@code null}
      */
     public static String escape(String s) {
         return Strings.escape(s, defaultCharMapper);
     }
 
+    /**
+     * Escape a {@link CharSequence} for use in XML, with the default set of character mappings.
+     * Specifically, this method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt><tt>&quot;</tt> (double quote)</dt>
+     * <dd><tt>&amp;quot;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   cs      the {@link CharSequence} to be escaped
+     * @return          the escaped {@link CharSequence}
+     * @throws          NullPointerException if the input {@link CharSequence} is {@code null}
+     */
     public static CharSequence escape(CharSequence cs) {
         return Strings.escape(cs, defaultCharMapper);
     }
 
+    /**
+     * Escape a string for use in XML, including apostrophe.  Specifically, this method
+     * converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt><tt>&quot;</tt> (double quote)</dt>
+     * <dd><tt>&amp;quot;</tt></dd>
+     * <dt><tt>&apos;</tt> (apostrophe)</dt>
+     * <dd><tt>&amp;apos;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   s       the string to be escaped
+     * @return          the escaped string
+     * @throws          NullPointerException if the input string is {@code null}
+     */
     public static String escapeAll(String s) {
         return Strings.escape(s, allCharMapper);
     }
 
+    /**
+     * Escape a {@link CharSequence} for use in XML, including apostrophe.  Specifically, this
+     * method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt><tt>&quot;</tt> (double quote)</dt>
+     * <dd><tt>&amp;quot;</tt></dd>
+     * <dt><tt>&apos;</tt> (apostrophe)</dt>
+     * <dd><tt>&amp;apos;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   cs      the {@link CharSequence} to be escaped
+     * @return          the escaped {@link CharSequence}
+     * @throws          NullPointerException if the input {@link CharSequence} is {@code null}
+     */
     public static CharSequence escapeAll(CharSequence cs) {
         return Strings.escape(cs, allCharMapper);
     }
 
+    /**
+     * Escape a string for use in XML, with only the character mappings required for element
+     * content (not attributes).  Specifically, this method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   s       the string to be escaped
+     * @return          the escaped string
+     * @throws          NullPointerException if the input string is {@code null}
+     */
     public static String escapeData(String s) {
         return Strings.escape(s, dataCharMapper);
     }
 
+    /**
+     * Escape a {@link CharSequence} for use in XML, with only the character mappings required
+     * for element content (not attributes).  Specifically, this method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   cs      the {@link CharSequence} to be escaped
+     * @return          the escaped {@link CharSequence}
+     * @throws          NullPointerException if the input {@link CharSequence} is {@code null}
+     */
     public static CharSequence escapeData(CharSequence cs) {
         return Strings.escape(cs, dataCharMapper);
     }
 
+    /**
+     * Append characters to an {@link Appendable}, escaping characters for use in XML with the
+     * default set of character mappings.
+     * Specifically, this method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt><tt>&quot;</tt> (double quote)</dt>
+     * <dd><tt>&amp;quot;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   a       the {@link Appendable} (e.g. a {@link StringBuilder})
+     * @param   cs      the source {@link CharSequence}
+     * @throws  IOException if thrown by the {@link Appendable}
+     */
     public static void appendEscaped(Appendable a, CharSequence cs) throws IOException {
         Strings.appendEscaped(a, cs, defaultCharMapper);
     }
 
+    /**
+     * Append characters to an {@link Appendable}, escaping characters for use in XML including
+     * apostrophe.  Specifically, this method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt><tt>&quot;</tt> (double quote)</dt>
+     * <dd><tt>&amp;quot;</tt></dd>
+     * <dt><tt>&apos;</tt> (apostrophe)</dt>
+     * <dd><tt>&amp;apos;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   a       the {@link Appendable} (e.g. a {@link StringBuilder})
+     * @param   cs      the source {@link CharSequence}
+     * @throws  IOException if thrown by the {@link Appendable}
+     */
     public static void appendEscapedAll(Appendable a, CharSequence cs) throws IOException {
         Strings.appendEscaped(a, cs, allCharMapper);
     }
 
+    /**
+     * Append characters to an {@link Appendable}, escaping characters for use in XML with only
+     * the character mappings required for element content (not attributes).  Specifically, this
+     * method converts:
+     * <dl>
+     * <dt><tt>&lt;</tt> (less than)</dt>
+     * <dd><tt>&amp;lt;</tt></dd>
+     * <dt><tt>&gt;</tt> (greater than)</dt>
+     * <dd><tt>&amp;gt;</tt></dd>
+     * <dt><tt>&amp;</tt> (ampersand)</dt>
+     * <dd><tt>&amp;amp;</tt></dd>
+     * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
+     * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
+     * </dl>
+     *
+     * @param   a       the {@link Appendable} (e.g. a {@link StringBuilder})
+     * @param   cs      the source {@link CharSequence}
+     * @throws  IOException if thrown by the {@link Appendable}
+     */
     public static void appendEscapedData(Appendable a, CharSequence cs) throws IOException {
         Strings.appendEscaped(a, cs, dataCharMapper);
     }
@@ -500,6 +690,13 @@ public class XML {
         return Strings.split(s, start, end, spaceTest);
     }
 
+    /**
+     * Get an {@link ElementIterator} to iterate over the element contents of the given
+     * {@link Node}.
+     *
+     * @param   parent  the parent {@link Node}
+     * @return          the {@link ElementIterator}
+     */
     public static ElementIterator elementIterator(Node parent) {
         return new ElementIterator(parent);
     }
