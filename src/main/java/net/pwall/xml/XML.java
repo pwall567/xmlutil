@@ -457,8 +457,7 @@ public class XML {
 
     /**
      * Escape a {@link CharSequence} for use in XML, including apostrophe (which is not included
-     * in the XML standard character entities).  Specifically, this
-     * method converts:
+     * in the XML standard character entities).  Specifically, this method converts:
      * <dl>
      * <dt><tt>&lt;</tt> (less than)</dt>
      * <dd><tt>&amp;lt;</tt></dd>
@@ -528,8 +527,7 @@ public class XML {
 
     /**
      * Append characters to an {@link Appendable}, escaping characters for use in XML with the
-     * default set of character mappings.
-     * Specifically, this method converts:
+     * default set of character mappings.  Specifically, this method converts:
      * <dl>
      * <dt><tt>&lt;</tt> (less than)</dt>
      * <dd><tt>&amp;lt;</tt></dd>
