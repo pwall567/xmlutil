@@ -429,7 +429,8 @@ public class XML {
     }
 
     /**
-     * Escape a string for use in XML, including apostrophe.  Specifically, this method
+     * Escape a string for use in XML, including apostrophe (which is not included in the XML
+     * standard character entities).  Specifically, this method
      * converts:
      * <dl>
      * <dt><tt>&lt;</tt> (less than)</dt>
@@ -440,7 +441,7 @@ public class XML {
      * <dd><tt>&amp;amp;</tt></dd>
      * <dt><tt>&quot;</tt> (double quote)</dt>
      * <dd><tt>&amp;quot;</tt></dd>
-     * <dt><tt>&apos;</tt> (apostrophe)</dt>
+     * <dt><tt>'</tt> (apostrophe)</dt>
      * <dd><tt>&amp;apos;</tt></dd>
      * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
      * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
@@ -455,7 +456,8 @@ public class XML {
     }
 
     /**
-     * Escape a {@link CharSequence} for use in XML, including apostrophe.  Specifically, this
+     * Escape a {@link CharSequence} for use in XML, including apostrophe (which is not included
+     * in the XML standard character entities).  Specifically, this
      * method converts:
      * <dl>
      * <dt><tt>&lt;</tt> (less than)</dt>
@@ -466,7 +468,7 @@ public class XML {
      * <dd><tt>&amp;amp;</tt></dd>
      * <dt><tt>&quot;</tt> (double quote)</dt>
      * <dd><tt>&amp;quot;</tt></dd>
-     * <dt><tt>&apos;</tt> (apostrophe)</dt>
+     * <dt><tt>'</tt> (apostrophe)</dt>
      * <dd><tt>&amp;apos;</tt></dd>
      * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
      * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
@@ -551,7 +553,8 @@ public class XML {
 
     /**
      * Append characters to an {@link Appendable}, escaping characters for use in XML including
-     * apostrophe.  Specifically, this method converts:
+     * apostrophe (which is not included in the XML standard character entities).  Specifically,
+     * this method converts:
      * <dl>
      * <dt><tt>&lt;</tt> (less than)</dt>
      * <dd><tt>&amp;lt;</tt></dd>
@@ -561,7 +564,7 @@ public class XML {
      * <dd><tt>&amp;amp;</tt></dd>
      * <dt><tt>&quot;</tt> (double quote)</dt>
      * <dd><tt>&amp;quot;</tt></dd>
-     * <dt><tt>&apos;</tt> (apostrophe)</dt>
+     * <dt><tt>'</tt> (apostrophe)</dt>
      * <dd><tt>&amp;apos;</tt></dd>
      * <dt>Characters less than 0x20 (except for 0x09, 0x0A, 0x0D) or greater than 0x7E</dt>
      * <dd><tt>&amp;#<i>nnn</i>;</tt> (where <i>nnn</i> is the code position in decimal)</dd>
