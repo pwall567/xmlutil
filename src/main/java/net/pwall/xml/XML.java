@@ -28,6 +28,7 @@ package net.pwall.xml;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.IntPredicate;
 
@@ -76,7 +77,7 @@ public class XML {
     private static DocumentBuilderFactory docBuilderFactory = null;
     private static DocumentBuilderFactory docBuilderFactoryNS = null;
 
-    private static final IntPredicate spaceTest = (ch) -> isWhiteSpace(ch);
+    private static final IntPredicate spaceTest = XML::isWhiteSpace;
 
     private static final CharMapperEntry[] predefinedEntityMappings = new CharMapperEntry[] {
         new CharMapperEntry('&', "&amp;"),
@@ -811,7 +812,7 @@ public class XML {
         else {
             String message = "Incorrect node type";
             Node parent = node.getParentNode();
-            if (parent != null && parent instanceof Element)
+            if (parent instanceof Element)
                 message = message + " in <" + ((Element)parent).getTagName() + '>';
             throw new XMLException(message);
         }
@@ -830,11 +831,36 @@ public class XML {
             if (!isWhiteSpace(ch)) {
                 String message = "No text allowed";
                 Node parent = text.getParentNode();
-                if (parent != null && parent instanceof Element)
+                if (parent instanceof Element)
                     message = message + " in <" + ((Element)parent).getTagName() + '>';
                 throw new XMLException(message);
             }
         }
+    }
+
+    /**
+     * Get an {@link Iterator} over the child nodes of an {@link Element}.
+     *
+     * @param   element the {@link Element}
+     * @return          the {@link Iterator}
+     */
+    public static Iterable<Node> childNodes(Element element) {
+        return () -> new Iterator<Node>() {
+
+            private NodeList children = element.getChildNodes();
+            private int index = 0;
+
+            @Override
+            public boolean hasNext() {
+                return index < children.getLength();
+            }
+
+            @Override
+            public Node next() {
+                return children.item(index++);
+            }
+
+        };
     }
 
 }
