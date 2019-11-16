@@ -3,6 +3,11 @@ Added this change log after project was already under way.  Early changes are no
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1] - 2019-11-16
+### Changed
+- Added `trimLeading`, `trimTrailing`, `isCommentOrEmpty` and `isElementEmpty` methods to `XML`
+- Switched to later version of `javautil`
+
 ## [2.0] - 2019-06-12
 ### Changed
 - Updated to use Java 8

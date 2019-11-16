@@ -65,14 +65,12 @@ public class XML {
 
     public static final String NAMESPACES_FEATURE = "http://xml.org/sax/features/namespaces";
     public static final String VALIDATION_FEATURE = "http://xml.org/sax/features/validation";
-    public static final String RESOLVE_DTD_URIS_FEATURE =
-            "http://xml.org/sax/features/resolve-dtd-uris";
+    public static final String RESOLVE_DTD_URIS_FEATURE = "http://xml.org/sax/features/resolve-dtd-uris";
     public static final String EXTERNAL_GENERAL_ENTITIES_FEATURE =
             "http://xml.org/sax/features/external-general-entities";
     public static final String EXTERNAL_PARAMETER_ENTITIES_FEATURE =
             "http://xml.org/sax/features/external-parameter-entities";
-    public static final String LEXICAL_HANDLER_PROPERTY =
-            "http://xml.org/sax/properties/lexical-handler";
+    public static final String LEXICAL_HANDLER_PROPERTY = "http://xml.org/sax/properties/lexical-handler";
 
     private static DocumentBuilderFactory docBuilderFactory = null;
     private static DocumentBuilderFactory docBuilderFactoryNS = null;
@@ -96,13 +94,8 @@ public class XML {
             return "&amp;";
         if (codePoint == '"')
             return "&quot;";
-        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
-            StringBuilder sb = new StringBuilder(10);
-            sb.append("&#");
-            sb.append(codePoint);
-            sb.append(';');
-            return sb.toString();
-        }
+        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F)
+            return "&#" + codePoint + ';';
         return null;
     };
 
@@ -117,13 +110,8 @@ public class XML {
             return "&quot;";
         if (codePoint == '\'')
             return "&apos;";
-        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
-            StringBuilder sb = new StringBuilder(10);
-            sb.append("&#");
-            sb.append(codePoint);
-            sb.append(';');
-            return sb.toString();
-        }
+        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F)
+            return "&#" + codePoint + ';';
         return null;
     };
 
@@ -134,13 +122,8 @@ public class XML {
             return "&gt;";
         if (codePoint == '&')
             return "&amp;";
-        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F) {
-            StringBuilder sb = new StringBuilder(10);
-            sb.append("&#");
-            sb.append(codePoint);
-            sb.append(';');
-            return sb.toString();
-        }
+        if (codePoint < ' ' && !isWhiteSpace(codePoint) || codePoint >= 0x7F)
+            return "&#" + codePoint + ';';
         return null;
     };
 
@@ -172,8 +155,7 @@ public class XML {
                     sb.append(Character.highSurrogate(codePoint));
                     sb.append(Character.lowSurrogate(codePoint));
                 }
-                else if (Character.isBmpCodePoint(codePoint) &&
-                        !Character.isSurrogate((char)codePoint))
+                else if (Character.isBmpCodePoint(codePoint) && !Character.isSurrogate((char)codePoint))
                     sb.append((char)codePoint);
                 else
                     throw new IllegalArgumentException("Illegal character reference");
@@ -220,8 +202,7 @@ public class XML {
      * @throws  SAXException if any parse errors occur
      * @throws  IOException if any I/O errors occur
      */
-    public static Document parse(InputStream is)
-            throws ParserConfigurationException, SAXException, IOException {
+    public static Document parse(InputStream is) throws ParserConfigurationException, SAXException, IOException {
         return getDocumentBuilder().parse(is);
     }
 
@@ -238,8 +219,8 @@ public class XML {
      * @throws  SAXException if any parse errors occur
      * @throws  IOException if any I/O errors occur
      */
-    public static Document parse(InputStream is, String systemId)
-            throws ParserConfigurationException, SAXException, IOException {
+    public static Document parse(InputStream is, String systemId) throws ParserConfigurationException, SAXException,
+            IOException {
         return getDocumentBuilder().parse(is, systemId);
     }
 
@@ -254,8 +235,7 @@ public class XML {
      * @throws  SAXException if any parse errors occur
      * @throws  IOException if any I/O errors occur
      */
-    public static Document parse(String uri)
-            throws ParserConfigurationException, SAXException, IOException {
+    public static Document parse(String uri) throws ParserConfigurationException, SAXException, IOException {
         return getDocumentBuilder().parse(uri);
     }
 
@@ -270,8 +250,7 @@ public class XML {
      * @throws  SAXException if any parse errors occur
      * @throws  IOException if any I/O errors occur
      */
-    public static Document parse(File f)
-            throws ParserConfigurationException, SAXException, IOException {
+    public static Document parse(File f) throws ParserConfigurationException, SAXException, IOException {
         return getDocumentBuilder().parse(f);
     }
 
@@ -286,8 +265,7 @@ public class XML {
      * @throws  SAXException if any parse errors occur
      * @throws  IOException if any I/O errors occur
      */
-    public static Document parse(InputSource is)
-            throws ParserConfigurationException, SAXException, IOException {
+    public static Document parse(InputSource is) throws ParserConfigurationException, SAXException, IOException {
         return getDocumentBuilder().parse(is);
     }
 
@@ -611,8 +589,8 @@ public class XML {
     }
 
     /**
-     * Trim leading and trailing white space characters from a {@link String}, using the
-     * definition of white space in the XML specification.
+     * Trim leading and trailing white space characters from a {@link String}, using the definition of white space in
+     * the XML specification.
      *
      * @param   s       the {@link String} to be trimmed
      * @return          the trimmed {@link String}
@@ -623,8 +601,32 @@ public class XML {
     }
 
     /**
-     * Trim leading and trailing white space characters from a {@link CharSequence}, using the
-     * definition of white space in the XML specification.
+     * Trim leading white space characters from a {@link String}, using the definition of white space in the XML
+     * specification.
+     *
+     * @param   s       the {@link String} to be trimmed
+     * @return          the trimmed {@link String}
+     * @throws          NullPointerException if the input string is {@code null}
+     */
+    public static String trimLeading(String s) {
+        return Strings.trimLeading(s, spaceTest);
+    }
+
+    /**
+     * Trim trailing white space characters from a {@link String}, using the definition of white space in the XML
+     * specification.
+     *
+     * @param   s       the {@link String} to be trimmed
+     * @return          the trimmed {@link String}
+     * @throws          NullPointerException if the input string is {@code null}
+     */
+    public static String trimTrailing(String s) {
+        return Strings.trimTrailing(s, spaceTest);
+    }
+
+    /**
+     * Trim leading and trailing white space characters from a {@link CharSequence}, using the definition of white space
+     * in the XML specification.
      *
      * @param   cs      the {@link CharSequence} to be trimmed
      * @return          the trimmed {@link CharSequence}
@@ -632,6 +634,30 @@ public class XML {
      */
     public static CharSequence trim(CharSequence cs) {
         return Strings.trim(cs, spaceTest);
+    }
+
+    /**
+     * Trim leading white space characters from a {@link CharSequence}, using the definition of white space in the XML
+     * specification.
+     *
+     * @param   cs      the {@link CharSequence} to be trimmed
+     * @return          the trimmed {@link CharSequence}
+     * @throws          NullPointerException if the input {@link CharSequence} is {@code null}
+     */
+    public static CharSequence trimLeading(CharSequence cs) {
+        return Strings.trimLeading(cs, spaceTest);
+    }
+
+    /**
+     * Trim trailing white space characters from a {@link CharSequence}, using the definition of white space in the XML
+     * specification.
+     *
+     * @param   cs      the {@link CharSequence} to be trimmed
+     * @return          the trimmed {@link CharSequence}
+     * @throws          NullPointerException if the input {@link CharSequence} is {@code null}
+     */
+    public static CharSequence trimTrailing(CharSequence cs) {
+        return Strings.trimTrailing(cs, spaceTest);
     }
 
     /**
@@ -665,8 +691,34 @@ public class XML {
     }
 
     /**
-     * Split a string into white space delimited tokens, using the definition of white space in
-     * the XML specification.
+     * Tests whether a {@link Node} is comment node, or is a text node composed entirely of whitespace.
+     *
+     * @param   node    the node to be tested
+     * @return          {@code true} if the node is comment or whitespace
+     */
+    public static boolean isCommentOrEmpty(Node node) {
+        short type = node.getNodeType();
+        return type == Node.COMMENT_NODE || type == Node.TEXT_NODE && isAllWhiteSpace(((Text)node).getData());
+    }
+
+    /**
+     * Tests whether an element is empty, that it, is has no content or the only content is comment nodes or
+     * all-whitespace text nodes.
+     *
+     * @param   element the element
+     * @return          {@code true} if the element is empty
+     */
+    public static boolean isElementEmpty(Element element) {
+        NodeList childNodes = element.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            if (!isCommentOrEmpty(childNodes.item(i)))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Split a string into white space delimited tokens, using the definition of white space in the XML specification.
      *
      * @param   s       the string to be split
      * @return          an array of tokens
@@ -677,8 +729,8 @@ public class XML {
     }
 
     /**
-     * Split a portion of a string into white space delimited tokens, using the definition of
-     * white space in the XML specification.
+     * Split a portion of a string into white space delimited tokens, using the definition of white space in the XML
+     * specification.
      *
      * @param   s       the string to be split
      * @param   start   the start index of the portion to be examined
@@ -693,8 +745,7 @@ public class XML {
     }
 
     /**
-     * Get an {@link ElementIterator} to iterate over the element contents of the given
-     * {@link Node}.
+     * Get an {@link ElementIterator} to iterate over the element contents of the given {@link Node}.
      *
      * @param   parent  the parent {@link Node}
      * @return          the {@link ElementIterator}
@@ -723,8 +774,7 @@ public class XML {
      * @return                  {@code true} if the names match
      */
     public static boolean matchNS(Element elem, String localName, String namespaceURI) {
-        return Objects.equals(elem.getLocalName(), localName) &&
-                Objects.equals(elem.getNamespaceURI(), namespaceURI);
+        return Objects.equals(elem.getLocalName(), localName) && Objects.equals(elem.getNamespaceURI(), namespaceURI);
     }
 
     /**
@@ -773,7 +823,7 @@ public class XML {
         sb.append(elem.getTagName());
         sb.append('>');
         Node parent = elem.getParentNode();
-        if (parent != null && parent instanceof Element) {
+        if (parent instanceof Element) {
             sb.append(" in <");
             sb.append(((Element)parent).getTagName());
             sb.append('>');
