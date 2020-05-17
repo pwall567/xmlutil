@@ -51,7 +51,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  *
  * @author Peter Wall
  */
-public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
+public class XMLFormatter extends DefaultHandler2 implements SAXHandler, AutoCloseable {
 
     /**
      * Enumeration to control whitespace handling in the formatted output:
@@ -69,23 +69,22 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         NONE, ALL, INDENT
     }
 
-    private static String eol = System.getProperty("line.separator");
+    private static final String eol = System.getProperty("line.separator");
 
-    private OutputStream out;
+    private final OutputStream out;
     private Whitespace whitespace;
     private String encoding;
     private int indent;
-    private StringBuilder data;
+    private final StringBuilder data;
     private boolean elementCloseAngleBracketPending;
-    private List<Element> elements;
-    private List<PrefixMapping> prefixMappings;
+    private final List<Element> elements;
+    private final List<PrefixMapping> prefixMappings;
     private Writer writer;
     private boolean inCDATA;
     private Locator locator;
     private boolean documentStarted;
     private boolean documentEnded;
     private boolean dtdStarted;
-    private boolean dtdInternalSubset;
     private boolean dtdEnded;
 
     /**
@@ -109,6 +108,8 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
         locator = null;
         documentStarted = false;
         documentEnded = false;
+        dtdStarted = false;
+        dtdEnded = false;
     }
 
     /**
@@ -194,8 +195,6 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
             throw new SAXException("Misplaced End DTD");
         dtdEnded = true;
         try {
-            if (dtdInternalSubset)
-                write(']');
             write('>');
             if (whitespace == Whitespace.INDENT)
                 write(eol);
@@ -308,11 +307,8 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
             }
             for (; prefixMappingIndex < prefixMappings.size(); prefixMappingIndex++) {
                 PrefixMapping prefixMapping = prefixMappings.get(prefixMappingIndex);
-                write(" xmlns");
-                if (prefixMapping.getPrefix().length() > 0) {
-                    write(':');
-                    write(prefixMapping.getPrefix());
-                }
+                write(' ');
+                write(prefixMapping.getXmlns());
                 write("=\"");
                 write(XML.escape(prefixMapping.getUri()));
                 write('"');
@@ -391,18 +387,16 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
             }
             else { // whitespace == Whitespace.INDENT
                 if (elementCloseAngleBracketPending) {
-                    if (XML.isAllWhiteSpace(data)) {
+                    if (XML.isAllWhiteSpace(data))
                         write("/>");
-                        write(eol);
-                    }
                     else {
                         write('>');
                         write(XML.escapeData(XML.trim(data)));
                         write("</");
                         write(qName);
                         write('>');
-                        write(eol);
                     }
+                    write(eol);
                     elementCloseAngleBracketPending = false;
                 }
                 else {
@@ -466,9 +460,8 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
             throw new SAXException("Document already ended");
         try {
             write(checkData());
-            if (target.indexOf("?>") >= 0 || data.indexOf("?>") >= 0)
-                throw new SAXParseException("Illegal content in processing instruction",
-                        locator);
+            if (target.contains("?>") || data.contains("?>"))
+                throw new SAXParseException("Illegal content in processing instruction", locator);
             if (whitespace == Whitespace.INDENT)
                 writeSpaces(elements.size() * getIndent());
             write("<?");
@@ -846,10 +839,10 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
      */
     public static class Element {
 
-        private String uri;
-        private String localName;
-        private String qName;
-        private int prefixMappingIndex;
+        private final String uri;
+        private final String localName;
+        private final String qName;
+        private final int prefixMappingIndex;
 
         public Element(String uri, String localName, String qName, int prefixMappingIndex) {
             this.uri = uri;
@@ -872,26 +865,6 @@ public class XMLFormatter extends DefaultHandler2 implements AutoCloseable {
 
         public int getPrefixMappingIndex() {
             return prefixMappingIndex;
-        }
-
-    }
-
-    public static class PrefixMapping {
-
-        private String prefix;
-        private String uri;
-
-        public PrefixMapping(String prefix, String uri) {
-            this.prefix = prefix;
-            this.uri = uri;
-        }
-
-        public String getPrefix() {
-            return prefix;
-        }
-
-        public String getUri() {
-            return uri;
         }
 
     }
