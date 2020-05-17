@@ -3,6 +3,10 @@ Added this change log after project was already under way.  Early changes are no
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.2] - 2020-05-17
+### Changed
+- Added `SAX2DOM`, `SAXHandler`, `DocumentLocator` and `PrefixMapping`
+
 ## [2.1] - 2019-11-16
 ### Changed
 - Added `trimLeading`, `trimTrailing`, `isCommentOrEmpty` and `isElementEmpty` methods to `XML`
